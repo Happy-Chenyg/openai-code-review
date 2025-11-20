@@ -57,7 +57,7 @@
         </dependency>
 
         <dependency>
-            <groupId>plus.gaga.middleware</groupId>
+            <groupId>com.chenyg.middleware</groupId>
             <artifactId>openai-code-review-sdk</artifactId>
             <version>1.0</version>
         </dependency>
