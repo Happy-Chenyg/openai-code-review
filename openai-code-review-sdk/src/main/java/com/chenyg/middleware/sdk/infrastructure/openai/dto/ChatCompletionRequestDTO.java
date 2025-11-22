@@ -1,8 +1,12 @@
-package com.chenyg.middleware.sdk.domain.model;
+package com.chenyg.middleware.sdk.infrastructure.openai.dto;
+
+
+
+import com.chenyg.middleware.sdk.domain.model.Model;
 
 import java.util.List;
 
-public class ChatCompletionRequest {
+public class ChatCompletionRequestDTO {
 
     private String model = Model.GLM_4_FLASH.getCode();
     private List<Prompt> messages;
@@ -53,4 +57,3 @@ public class ChatCompletionRequest {
         this.messages = messages;
     }
 }
-

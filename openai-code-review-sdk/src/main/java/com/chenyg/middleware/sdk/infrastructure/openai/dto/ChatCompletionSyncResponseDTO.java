@@ -1,9 +1,8 @@
-package com.chenyg.middleware.sdk.domain.model;
-
+package com.chenyg.middleware.sdk.infrastructure.openai.dto;
 
 import java.util.List;
 
-public class ChatCompletionSyncResponse {
+public class ChatCompletionSyncResponseDTO {
 
     private List<Choice> choices;
 
@@ -48,4 +47,3 @@ public class ChatCompletionSyncResponse {
         this.choices = choices;
     }
 }
-
