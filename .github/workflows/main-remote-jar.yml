@@ -1,4 +1,4 @@
-name: Build and Run OpenAiCodeReview By Main Maven Jar
+name: Build and Run OpenAiCodeReview By Main Remote Jar
 
 on:
   push:
@@ -24,11 +24,11 @@ jobs:
           distribution: 'adopt'
           java-version: '11'
 
-      - name: Build with Maven
-        run: mvn clean install
+      - name: Create libs directory
+        run: mkdir -p ./libs
 
-      - name: Copy openai-code-review-sdk JAR
-        run: mvn dependency:copy -Dartifact=com.chenyg.middleware:openai-code-review-sdk:1.0 -DoutputDirectory=./libs
+      - name: Download openai-code-review-sdk JAR
+        run: wget -O ./libs/openai-code-review-sdk-1.0.jar https://github.com/Happy-Chenyg/openai-code-rewiew-log/releases/download/v1.0/openai-code-review-sdk-1.0.jar
 
       - name: Get repository name
         id: repo-name
