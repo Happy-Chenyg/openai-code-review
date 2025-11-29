@@ -44,7 +44,7 @@ public class ApiTest {
         String code = "1+1";
 
         String jsonInpuString = "{"
-                + "\"model\":\"glm-4-flash\","
+                + "\"model\":\"glm-4.5-flash\","
                 + "\"messages\": ["
                 + "    {"
                 + "        \"role\": \"user\","

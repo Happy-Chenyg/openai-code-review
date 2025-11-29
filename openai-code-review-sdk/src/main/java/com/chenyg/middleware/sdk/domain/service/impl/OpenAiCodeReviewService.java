@@ -31,7 +31,7 @@ public class OpenAiCodeReviewService extends AbstractOpenAiCodeReviewService {
     @Override
     protected String codeReview(String diffCode) throws Exception {
         ChatCompletionRequestDTO chatCompletionRequest = new ChatCompletionRequestDTO();
-        chatCompletionRequest.setModel( Model.GLM_4_FLASH.getCode());
+        chatCompletionRequest.setModel( Model.GLM_4_5_FLASH.getCode());
         chatCompletionRequest.setMessages(new ArrayList<ChatCompletionRequestDTO.Prompt>() {
             private static final long serialVersionUID = -7988151926241837899L;
 
@@ -52,7 +52,7 @@ public class OpenAiCodeReviewService extends AbstractOpenAiCodeReviewService {
                         "3. 不要携带变量内容解释信息。\n" +
                         "4. 有清晰的标题结构\n" +
                         "返回格式严格如下：\n" +
-                        "# 小傅哥项目： OpenAi 代码评审.\n" +
+                        "# Happy-Chenyg项目： OpenAi 代码评审.\n" +
                         "### \uD83D\uDE00代码评分：{变量1}\n" +
                         "#### \uD83D\uDE00代码逻辑与目的：\n" +
                         "{变量6}\n" +
