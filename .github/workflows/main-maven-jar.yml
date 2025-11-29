@@ -58,8 +58,18 @@ jobs:
         env:
           # Github 配置；GITHUB_REVIEW_LOG_URI「https://github.com/Happy-Chenyg/openai-code-rewiew-log」、GITHUB_TOKEN「https://github.com/settings/tokens」
           GITHUB_REVIEW_LOG_URI: ${{ secrets.CODE_REVIEW_LOG_URI }}
-          GITHUB_CHECK_COMMIT_URL: ${{ secrets.CODE_CHECK_COMMIT_URL }}
           GITHUB_TOKEN: ${{ secrets.CODE_TOKEN }}
+          
+          # GitHub Environment Variables for PR/Commit detection
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+          GITHUB_HEAD_REF: ${{ github.head_ref }}
+          GITHUB_SHA: ${{ github.sha }}
+          
+          # Old config (can be removed if secrets are updated)
+          # GITHUB_CHECK_COMMIT_URL: ${{ secrets.CODE_CHECK_COMMIT_URL }}
+          
           COMMIT_PROJECT: ${{ env.REPO_NAME }}
           COMMIT_BRANCH: ${{ env.BRANCH_NAME }}
           COMMIT_AUTHOR: ${{ env.COMMIT_AUTHOR }}
