@@ -8,7 +8,7 @@ import java.util.List;
 
 public class ChatCompletionRequestDTO {
 
-    private String model = Model.GLM_4_FLASH.getCode();
+    private String model = Model.GLM_4_5_FLASH.getCode();
     private List<Prompt> messages;
 
     public static class Prompt {
