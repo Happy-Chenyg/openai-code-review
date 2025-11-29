@@ -61,7 +61,7 @@ public class OpenAiCodeReview {
         IOpenAI openAI = new ChatGLM(getEnv("CHATGLM_APIHOST"), getEnv("CHATGLM_APIKEYSECRET"));
 
         BaseGitOperation baseGitOperation = new GitRestAPIOperation(
-                getEnv("GIT_CHECK_COMMIT_URL"),
+                getEnv("GITHUB_CHECK_COMMIT_URL"),
                 getEnv("GITHUB_TOKEN")
         );
 
