@@ -3,10 +3,10 @@ name: Build and Run OpenAiCodeReview By Main Maven Jar
 on:
   push:
     branches:
-      - master-close
+      - master
   pull_request:
     branches:
-      - master-close
+      - master
 
 jobs:
   build:
@@ -58,6 +58,7 @@ jobs:
         env:
           # Github 配置；GITHUB_REVIEW_LOG_URI「https://github.com/Happy-Chenyg/openai-code-rewiew-log」、GITHUB_TOKEN「https://github.com/settings/tokens」
           GITHUB_REVIEW_LOG_URI: ${{ secrets.CODE_REVIEW_LOG_URI }}
+          GITHUB_CHECK_COMMIT_URL: ${{ secrets.CODE_CHECK_COMMIT_URL }}
           GITHUB_TOKEN: ${{ secrets.CODE_TOKEN }}
           COMMIT_PROJECT: ${{ env.REPO_NAME }}
           COMMIT_BRANCH: ${{ env.BRANCH_NAME }}

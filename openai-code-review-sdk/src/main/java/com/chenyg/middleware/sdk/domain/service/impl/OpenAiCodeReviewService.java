@@ -1,10 +1,8 @@
 package com.chenyg.middleware.sdk.domain.service.impl;
 
-
-
-
 import com.chenyg.middleware.sdk.domain.model.Model;
 import com.chenyg.middleware.sdk.domain.service.AbstractOpenAiCodeReviewService;
+import com.chenyg.middleware.sdk.infrastructure.git.BaseGitOperation;
 import com.chenyg.middleware.sdk.infrastructure.git.GitCommand;
 import com.chenyg.middleware.sdk.infrastructure.openai.IOpenAI;
 import com.chenyg.middleware.sdk.infrastructure.openai.dto.ChatCompletionRequestDTO;
@@ -12,20 +10,21 @@ import com.chenyg.middleware.sdk.infrastructure.openai.dto.ChatCompletionSyncRes
 import com.chenyg.middleware.sdk.infrastructure.weixin.WeiXin;
 import com.chenyg.middleware.sdk.infrastructure.weixin.dto.TemplateMessageDTO;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 public class OpenAiCodeReviewService extends AbstractOpenAiCodeReviewService {
 
-    public OpenAiCodeReviewService( GitCommand gitCommand, IOpenAI openAI, WeiXin weiXin) {
-        super(gitCommand, openAI, weiXin);
-    }
+    private BaseGitOperation gitOperation;
 
+    public OpenAiCodeReviewService(BaseGitOperation gitOperation, GitCommand gitCommand, IOpenAI openAI, WeiXin weiXin) {
+        super(gitCommand, openAI, weiXin);
+        this.gitOperation = gitOperation;
+    }
     @Override
-    protected String getDiffCode() throws IOException, InterruptedException {
-        return gitCommand.diff();
+    protected String getDiffCode() throws Exception {
+        return this.gitOperation.diff();
     }
 
     @Override

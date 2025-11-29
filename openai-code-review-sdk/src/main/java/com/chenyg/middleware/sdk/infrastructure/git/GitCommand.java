@@ -10,7 +10,7 @@ import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class GitCommand {
+public class GitCommand implements BaseGitOperation{
 
     private final Logger logger = LoggerFactory.getLogger(GitCommand.class);
 
@@ -42,6 +42,7 @@ public class GitCommand {
         Process logProcess = logProcessBuilder.start();
 
         BufferedReader logReader = new BufferedReader(new InputStreamReader(logProcess.getInputStream()));
+        // 从日志读取器中读取第一行数据，通常包含最新的提交哈希值
         String latestCommitHash = logReader.readLine();
         logReader.close();
         logProcess.waitFor();
