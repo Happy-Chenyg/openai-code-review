@@ -16,7 +16,7 @@ import java.util.Map;
 
 public class OpenAiCodeReviewService extends AbstractOpenAiCodeReviewService {
 
-    private BaseGitOperation gitOperation;
+    private final BaseGitOperation gitOperation;
 
     public OpenAiCodeReviewService(BaseGitOperation gitOperation, GitCommand gitCommand, IOpenAI openAI, WeiXin weiXin) {
         super(gitCommand, openAI, weiXin);
@@ -24,7 +24,7 @@ public class OpenAiCodeReviewService extends AbstractOpenAiCodeReviewService {
     }
     @Override
     protected String getDiffCode() throws Exception {
-        return this.gitOperation.diff();
+        return gitOperation.diff();
     }
 
     @Override
