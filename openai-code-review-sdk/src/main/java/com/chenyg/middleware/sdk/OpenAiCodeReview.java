@@ -65,7 +65,13 @@ public class OpenAiCodeReview {
                 getEnv("GITHUB_TOKEN")
         );
 
-        OpenAiCodeReviewService openAiCodeReviewService = new OpenAiCodeReviewService(baseGitOperation, gitCommand, openAI, weiXin);
+        // 获取策略配置，如果未配置则默认为 remote 配置有commitComment、remote、或组合（remote,commitComment）
+        String strategyType = System.getenv("CODE_REVIEW_TYPE");
+        if (strategyType == null || strategyType.isEmpty()) {
+            strategyType = "remote";
+        }
+
+        OpenAiCodeReviewService openAiCodeReviewService = new OpenAiCodeReviewService(baseGitOperation, gitCommand, openAI, weiXin, strategyType);
         openAiCodeReviewService.exec();
 
         logger.info("openai-code-review done!");
