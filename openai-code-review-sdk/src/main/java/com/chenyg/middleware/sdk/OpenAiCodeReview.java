@@ -61,7 +61,7 @@ public class OpenAiCodeReview {
         IOpenAI openAI = new ChatGLM(getEnv("CHATGLM_APIHOST"), getEnv("CHATGLM_APIKEYSECRET"));
 
         BaseGitOperation baseGitOperation = new GitRestAPIOperation(
-                getEnv("GITHUB_CHECK_COMMIT_URL"),
+                getGithubRequestUrl(),
                 getEnv("GITHUB_TOKEN")
         );
 
@@ -69,6 +69,34 @@ public class OpenAiCodeReview {
         openAiCodeReviewService.exec();
 
         logger.info("openai-code-review done!");
+    }
+
+    private static String getGithubRequestUrl() {
+        String apiHost = "https://api.github.com";
+        String repository = System.getenv("GITHUB_REPOSITORY");
+        String eventName = System.getenv("GITHUB_EVENT_NAME");
+
+        if (repository != null && !repository.isEmpty() && eventName != null && !eventName.isEmpty()) {
+            if ("pull_request".equals(eventName)) {
+                String base = System.getenv("GITHUB_BASE_REF");
+                String head = System.getenv("GITHUB_HEAD_REF");
+                // PR 比较 API: /repos/{owner}/{repo}/compare/{base}...{head}
+                return apiHost + "/repos/" + repository + "/compare/" + base + "..." + head;
+            } else if ("push".equals(eventName)) {
+                String sha = System.getenv("GITHUB_SHA");
+                // Push Commit API: /repos/{owner}/{repo}/commits/{sha}
+                return apiHost + "/repos/" + repository + "/commits/" + sha;
+            }
+        }
+
+        // 兼容旧配置
+        String checkCommitUrl = System.getenv("GITHUB_CHECK_COMMIT_URL");
+        if (checkCommitUrl != null && !checkCommitUrl.isEmpty()) {
+            return checkCommitUrl;
+        }
+
+        // 如果都无法获取，则抛出异常或返回 null 由后续处理（这里选择抛出异常提示配置）
+        throw new RuntimeException("Cannot determine GitHub API URL. Please set GITHUB_REPOSITORY, GITHUB_EVENT_NAME etc. or GITHUB_CHECK_COMMIT_URL.");
     }
 
     private static String getEnv(String key) {
