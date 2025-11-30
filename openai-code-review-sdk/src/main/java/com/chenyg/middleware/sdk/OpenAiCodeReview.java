@@ -60,9 +60,12 @@ public class OpenAiCodeReview {
 
         IOpenAI openAI = new ChatGLM(getEnv("CHATGLM_APIHOST"), getEnv("CHATGLM_APIKEYSECRET"));
 
+        String pullNumber = getPullNumber();
+
         BaseGitOperation baseGitOperation = new GitRestAPIOperation(
                 getGithubRequestUrl(),
-                getEnv("GITHUB_TOKEN")
+                getEnv("GITHUB_TOKEN"),
+                pullNumber
         );
 
         // 获取策略配置，如果未配置则默认为 remote 配置有commitComment、remote、或组合（remote,commitComment）
@@ -75,6 +78,19 @@ public class OpenAiCodeReview {
         openAiCodeReviewService.exec();
 
         logger.info("openai-code-review done!");
+    }
+    
+    private static String getPullNumber() {
+        // 从 GITHUB_REF 中提取 PR ID
+        // 格式: refs/pull/11/merge
+        String ref = System.getenv("GITHUB_REF");
+        if (ref != null && ref.startsWith("refs/pull/")) {
+            String[] parts = ref.split("/");
+            if (parts.length > 2) {
+                return parts[2];
+            }
+        }
+        return null;
     }
 
     private static String getGithubRequestUrl() {

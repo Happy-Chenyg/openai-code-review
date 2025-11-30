@@ -23,16 +23,19 @@ public class GitRestAPIOperation implements BaseGitOperation{
     private final String githubRepoUrl;
 
     private final String githubToken;
+    private final String pullNumber;
 
     private SingleCommitResponseDTO cachedCommitResponse;
 
-    public GitRestAPIOperation(String githubRepoUrl, String githubToken) {
+    public GitRestAPIOperation(String githubRepoUrl, String githubToken, String pullNumber) {
         this.githubRepoUrl = githubRepoUrl;
         this.githubToken = githubToken;
+        this.pullNumber = pullNumber;
     }
 
     @Override
     public String diff() throws Exception {
+        // ... (unchanged)
         // 如果缓存为空，则发起请求
         if (cachedCommitResponse == null) {
             logger.info("Start to get diff from github api: {}", githubRepoUrl);
@@ -59,7 +62,23 @@ public class GitRestAPIOperation implements BaseGitOperation{
 
     @Override
     public String writeResult(String result) throws Exception {
-        // 确保有数据（通常 diff() 会先被调用）
+        // 如果是 PR，使用 PR Review API 发表总评
+        if (pullNumber != null && !pullNumber.isEmpty()) {
+            String prReviewUrl = getBaseRepoUrl() + "/pulls/" + pullNumber + "/reviews";
+            Map<String, Object> reviewBody = new HashMap<>();
+            reviewBody.put("body", result);
+            reviewBody.put("event", "COMMENT"); // 或者 APPROVE / REQUEST_CHANGES
+
+            logger.info("Writing PR Review to: {}", prReviewUrl);
+            String response = DefaultHttpUtil.executePostRequest(prReviewUrl, getHeaders(), reviewBody);
+            logger.info("PR Review response: {}", response);
+            
+            // PR Review 创建后，HTML URL 通常在返回的 JSON 中
+            // 这里简单返回一个拼接的 URL
+            return getBaseRepoUrl().replace("api.github.com/repos", "github.com") + "/pull/" + pullNumber;
+        }
+
+        // 否则回退到 Commit Comment 逻辑
         SingleCommitResponseDTO responseDTO = getCommitResponse();
         SingleCommitResponseDTO.CommitFile[] files = responseDTO.getFiles();
         for (SingleCommitResponseDTO.CommitFile file : files) {
@@ -81,6 +100,18 @@ public class GitRestAPIOperation implements BaseGitOperation{
         }
 
         return responseDTO.getHtml_url();
+    }
+    
+    private String getBaseRepoUrl() {
+        // 从 githubRepoUrl 截取基础 API URL: https://api.github.com/repos/{owner}/{repo}
+        String url = this.githubRepoUrl;
+        if (url.contains("/compare/")) {
+            return url.substring(0, url.indexOf("/compare/"));
+        }
+        if (url.contains("/commits/")) {
+            return url.substring(0, url.indexOf("/commits/"));
+        }
+        return url;
     }
 
     private String buildCommentUrl(SingleCommitResponseDTO.CommitFile file) {
