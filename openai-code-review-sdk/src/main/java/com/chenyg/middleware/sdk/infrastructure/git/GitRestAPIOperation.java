@@ -28,19 +28,27 @@ public class GitRestAPIOperation implements BaseGitOperation{
     }
     @Override
     public String diff() throws Exception {
+        logger.info("Start to get diff from github api: {}", githubRepoUrl);
         Map<String, String> params = new HashMap<String, String>();
         params.put("Accept", "application/vnd.github+json ");
         params.put("Authorization", "Bearer " + githubToken);
         params.put("X-GitHub-Api-Version", "2022-11-28");
 
         String result = DefaultHttpUtil.executeGetRequest(this.githubRepoUrl, params);
+        logger.info("Get diff from github api result: {}", result);
         SingleCommitResponseDTO singleCommitResponseDTO = JSON.parseObject(result, SingleCommitResponseDTO.class);
         SingleCommitResponseDTO.CommitFile[] files = singleCommitResponseDTO.getFiles();
+        if (files == null) {
+            logger.warn("Get diff from github api result files is null");
+            return "";
+        }
         StringBuilder diffCode = new StringBuilder();
         for (SingleCommitResponseDTO.CommitFile file : files) {
+            logger.info("Processing file: {}", file.getFilename());
             diffCode.append("待评审文件名称：").append(file.getFilename()).append("\n");
             diffCode.append("该文件变更代码：").append(file.getPatch()).append("\n");
         }
+        logger.info("Diff process finished.");
         return diffCode.toString();
 
     }
