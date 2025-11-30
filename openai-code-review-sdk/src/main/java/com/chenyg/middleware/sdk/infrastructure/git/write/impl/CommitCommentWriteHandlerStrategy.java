@@ -25,11 +25,7 @@ public class CommitCommentWriteHandlerStrategy implements IWriteHandlerStrategy 
 
     @Override
     public String execute(String codeResult) throws Exception {
-        if(!(baseGitOperation instanceof GitCommand)) {
-            throw new RuntimeException("baseGitOperation is not GitCommand");
-        }
-        GitCommand gitCommand = (GitCommand) baseGitOperation;
-        return gitCommand.commitAndPush(codeResult);
+        return baseGitOperation.writeResult(codeResult);
     }
 
 }
