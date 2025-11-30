@@ -11,8 +11,19 @@ import lombok.Data;
 @Data
 public class SingleCommitResponseDTO {
 
+    /**
+     * commit sha
+     */
     private String sha;
 
+    /**
+     * commit html url
+     */
+    private String html_url;
+
+    /**
+     * commit
+     */
     private Commit commit;
 
     private CommitFile[] files;

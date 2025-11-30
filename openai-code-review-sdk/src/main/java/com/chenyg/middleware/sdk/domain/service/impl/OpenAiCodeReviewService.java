@@ -4,6 +4,8 @@ import com.chenyg.middleware.sdk.domain.model.Model;
 import com.chenyg.middleware.sdk.domain.service.AbstractOpenAiCodeReviewService;
 import com.chenyg.middleware.sdk.infrastructure.git.BaseGitOperation;
 import com.chenyg.middleware.sdk.infrastructure.git.GitCommand;
+import com.chenyg.middleware.sdk.infrastructure.git.write.IWriteHandlerStrategy;
+import com.chenyg.middleware.sdk.infrastructure.git.write.WriteHandlerStrategyFactory;
 import com.chenyg.middleware.sdk.infrastructure.openai.IOpenAI;
 import com.chenyg.middleware.sdk.infrastructure.openai.dto.ChatCompletionRequestDTO;
 import com.chenyg.middleware.sdk.infrastructure.openai.dto.ChatCompletionSyncResponseDTO;
@@ -75,7 +77,15 @@ public class OpenAiCodeReviewService extends AbstractOpenAiCodeReviewService {
 
     @Override
     protected String recordCodeReview(String recommend) throws Exception {
-        return gitCommand.commitAndPush(recommend);
+
+        // 先临时定义一个变量，未来改为外部传递
+        String writeHandler = "commitComment";
+        // 根据配置的情况进行策略处理
+        IWriteHandlerStrategy writeHandlerStrategy = WriteHandlerStrategyFactory.getStrategy(writeHandler);
+        // 这里暂时写错git rest api后续重构Git的策略
+        writeHandlerStrategy.initData(gitOperation);
+        // 调用策略处理器处理
+        return writeHandlerStrategy.execute(recommend);
     }
 
     @Override

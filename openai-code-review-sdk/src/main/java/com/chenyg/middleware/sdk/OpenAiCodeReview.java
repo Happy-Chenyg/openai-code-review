@@ -77,12 +77,14 @@ public class OpenAiCodeReview {
         String eventName = System.getenv("GITHUB_EVENT_NAME");
 
         if (repository != null && !repository.isEmpty() && eventName != null && !eventName.isEmpty()) {
+            //https://api.github.com/repos/username/repository/compare/main...feature-branch
             if ("pull_request".equals(eventName)) {
                 String base = System.getenv("GITHUB_BASE_REF");
                 String head = System.getenv("GITHUB_HEAD_REF");
                 // PR 比较 API: /repos/{owner}/{repo}/compare/{base}...{head}
                 return apiHost + "/repos/" + repository + "/compare/" + base + "..." + head;
             } else if ("push".equals(eventName)) {
+                //https://api.github.com/repos/username/repository/commits/sha
                 String sha = System.getenv("GITHUB_SHA");
                 // Push Commit API: /repos/{owner}/{repo}/commits/{sha}
                 return apiHost + "/repos/" + repository + "/commits/" + sha;
