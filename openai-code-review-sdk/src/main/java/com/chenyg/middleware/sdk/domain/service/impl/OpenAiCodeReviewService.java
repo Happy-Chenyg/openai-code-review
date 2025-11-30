@@ -19,10 +19,12 @@ import java.util.Map;
 public class OpenAiCodeReviewService extends AbstractOpenAiCodeReviewService {
 
     private final BaseGitOperation gitOperation;
+    private final String strategyType;
 
-    public OpenAiCodeReviewService(BaseGitOperation gitOperation, GitCommand gitCommand, IOpenAI openAI, WeiXin weiXin) {
+    public OpenAiCodeReviewService(BaseGitOperation gitOperation, GitCommand gitCommand, IOpenAI openAI, WeiXin weiXin, String strategyType) {
         super(gitCommand, openAI, weiXin);
         this.gitOperation = gitOperation;
+        this.strategyType = strategyType;
     }
     @Override
     protected String getDiffCode() throws Exception {
@@ -77,15 +79,44 @@ public class OpenAiCodeReviewService extends AbstractOpenAiCodeReviewService {
 
     @Override
     protected String recordCodeReview(String recommend) throws Exception {
+        // 如果没有配置策略，默认使用 remote
+        if (strategyType == null || strategyType.isEmpty()) {
+            return gitCommand.commitAndPush(recommend);
+        }
 
-        // 先临时定义一个变量，未来改为外部传递
-        String writeHandler = "commitComment";
-        // 根据配置的情况进行策略处理
-        IWriteHandlerStrategy writeHandlerStrategy = WriteHandlerStrategyFactory.getStrategy(writeHandler);
-        // 这里暂时写错git rest api后续重构Git的策略
-        writeHandlerStrategy.initData(gitOperation);
-        // 调用策略处理器处理
-        return writeHandlerStrategy.execute(recommend);
+        String logUrl = null;
+        // 支持多个策略，用逗号分隔
+        String[] strategies = strategyType.split(",");
+        for (String strategyName : strategies) {
+            try {
+                strategyName = strategyName.trim();
+                IWriteHandlerStrategy strategy = WriteHandlerStrategyFactory.getStrategy(strategyName);
+                if (strategy == null) {
+                    System.err.println("Strategy not found: " + strategyName);
+                    continue;
+                }
+
+                // 根据策略类型注入不同的 Git 操作对象
+                if ("commitComment".equals(strategyName)) {
+                    strategy.initData(gitOperation); // 注入 GitRestAPIOperation
+                } else if ("remote".equals(strategyName)) {
+                    strategy.initData(gitCommand); // 注入 GitCommand
+                } else {
+                    strategy.initData(gitOperation); // 默认
+                }
+
+                String result = strategy.execute(recommend);
+
+                // 如果是 remote 策略，它的返回值通常是 logUrl，我们需要保留下来
+                if ("remote".equals(strategyName)) {
+                    logUrl = result;
+                }
+            } catch (Exception e) {
+                System.err.println("Failed to execute strategy " + strategyName + ": " + e.getMessage());
+            }
+        }
+
+        return logUrl;
     }
 
     @Override

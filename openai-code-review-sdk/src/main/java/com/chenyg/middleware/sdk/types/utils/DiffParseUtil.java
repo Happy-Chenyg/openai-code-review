@@ -9,13 +9,20 @@ public class DiffParseUtil {
 
     /**
      * 获取文件最后修改的位置
+     * <p>
+     *     优先寻找最后一行以+号开头的代码行（新增行），
+     *     如果找不到，则返回最后一行。
+     * </p>
      * @param fileDiff 文件变更的字符串
      * @return 行号
      */
     public static int parseLastDiffPosition(String fileDiff) {
-
-        // 暂时先用最大一个位置，未来看看是否用+号开始的行进行处理
         String[] lines = fileDiff.split("\n");
-        return lines.length-1;
+        for (int i = lines.length - 1; i >= 0; i--) {
+            if (lines[i].startsWith("+") && !lines[i].startsWith("+++")) {
+                return i;
+            }
+        }
+        return lines.length - 1;
     }
 }
