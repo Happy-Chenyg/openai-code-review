@@ -64,7 +64,13 @@ public class GitCommand implements BaseGitOperation{
             throw new RuntimeException("Failed to get diff, exit code:" + exitCode);
         }
 
+        // 返回差异内容字符串
         return diffCode.toString();
+    }
+
+    @Override
+    public String writeResult(String result) throws Exception {
+        return commitAndPush(result);
     }
 
     public String commitAndPush(String recommend) throws Exception {

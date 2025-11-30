@@ -8,4 +8,12 @@ public interface BaseGitOperation {
      * @throws Exception
      */
     public String diff() throws Exception;
+
+    /**
+     * 获取变更内容并保存
+     * @param result 评审结果
+     * @return 跳转地址
+     * @throws Exception
+     */
+    public String writeResult(String result) throws Exception;
 }
