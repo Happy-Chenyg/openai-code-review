@@ -87,7 +87,12 @@ public class GitCommand implements BaseGitOperation{
             dateFolder.mkdirs();
         }
 
-        String fileName = project + "-" + branch + "-" + author + System.currentTimeMillis() + "-" + RandomStringUtils.randomNumeric(4) + ".md";
+        // 净化文件名，替换非法字符
+        String safeProject = project.replaceAll("[^a-zA-Z0-9._-]", "_");
+        String safeBranch = branch.replaceAll("[^a-zA-Z0-9._-]", "_");
+        String safeAuthor = author.replaceAll("[^a-zA-Z0-9._-]", "_");
+
+        String fileName = safeProject + "-" + safeBranch + "-" + safeAuthor + System.currentTimeMillis() + "-" + RandomStringUtils.randomNumeric(4) + ".md";
         File newFile = new File(dateFolder, fileName);
         try (FileWriter writer = new FileWriter(newFile)) {
             writer.write(recommend);
