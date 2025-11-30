@@ -74,8 +74,8 @@ public class GitRestAPIOperation implements BaseGitOperation{
 
             // 构建正确的评论 URL
             String commentUrl = buildCommentUrl(file);
-            writeCommentRequest(request, commentUrl);
-            logger.info("写入评审到注释区域处理完成，注释结果：{}", request);
+            String response = writeCommentRequest(request, commentUrl);
+            logger.info("写入评审到注释区域处理完成，URL: {}, 注释结果：{}", commentUrl, response);
             // 由于之前的评审是一次性评审多次，所以这里只处理一次，未来优化
             break;
         }
