@@ -24,22 +24,24 @@ public class GitRestAPIOperation implements BaseGitOperation{
 
     private final String githubToken;
 
+    private SingleCommitResponseDTO cachedCommitResponse;
+
     public GitRestAPIOperation(String githubRepoUrl, String githubToken) {
         this.githubRepoUrl = githubRepoUrl;
         this.githubToken = githubToken;
     }
+
     @Override
     public String diff() throws Exception {
-        logger.info("Start to get diff from github api: {}", githubRepoUrl);
-        Map<String, String> params = new HashMap<String, String>();
-        params.put("Accept", "application/vnd.github+json ");
-        params.put("Authorization", "Bearer " + githubToken);
-        params.put("X-GitHub-Api-Version", "2022-11-28");
+        // 如果缓存为空，则发起请求
+        if (cachedCommitResponse == null) {
+            logger.info("Start to get diff from github api: {}", githubRepoUrl);
+            String result = DefaultHttpUtil.executeGetRequest(this.githubRepoUrl, getHeaders());
+            logger.info("Get diff from github api result: {}", result);
+            cachedCommitResponse = JSON.parseObject(result, SingleCommitResponseDTO.class);
+        }
 
-        String result = DefaultHttpUtil.executeGetRequest(this.githubRepoUrl, params);
-        logger.info("Get diff from github api result: {}", result);
-        SingleCommitResponseDTO singleCommitResponseDTO = JSON.parseObject(result, SingleCommitResponseDTO.class);
-        SingleCommitResponseDTO.CommitFile[] files = singleCommitResponseDTO.getFiles();
+        SingleCommitResponseDTO.CommitFile[] files = cachedCommitResponse.getFiles();
         if (files == null) {
             logger.warn("Get diff from github api result files is null");
             return "";
@@ -57,6 +59,7 @@ public class GitRestAPIOperation implements BaseGitOperation{
 
     @Override
     public String writeResult(String result) throws Exception {
+        // 确保有数据（通常 diff() 会先被调用）
         SingleCommitResponseDTO responseDTO = getCommitResponse();
         SingleCommitResponseDTO.CommitFile[] files = responseDTO.getFiles();
         for (SingleCommitResponseDTO.CommitFile file : files) {
@@ -67,12 +70,12 @@ public class GitRestAPIOperation implements BaseGitOperation{
             request.setBody(result);
             request.setPath(file.getFilename());
             request.setPosition(diffPositionIndex);
-            logger.info("写入注释请求参数：{}",JSON.toJSONString( request));
+            logger.info("写入注释请求参数：{}", JSON.toJSONString(request));
 
             // 构建正确的评论 URL
             String commentUrl = buildCommentUrl(file);
             writeCommentRequest(request, commentUrl);
-            logger.info("写入评审到注释区域处理完成，注释结果：{}",request);
+            logger.info("写入评审到注释区域处理完成，注释结果：{}", request);
             // 由于之前的评审是一次性评审多次，所以这里只处理一次，未来优化
             break;
         }
@@ -117,26 +120,29 @@ public class GitRestAPIOperation implements BaseGitOperation{
     }
 
     private String writeCommentRequest(CommitCommentRequestDTO request, String commentUrl) throws Exception {
-
-        Map<String, String> headers = new HashMap<String, String>();
-        headers.put("Accept", "application/vnd.github+json ");
-        headers.put("Authorization", "Bearer " + githubToken);
-        headers.put("X-GitHub-Api-Version", "2022-11-28");
-        String requestText = DefaultHttpUtil.executePostRequest(commentUrl, headers, request);
+        String requestText = DefaultHttpUtil.executePostRequest(commentUrl, getHeaders(), request);
         return requestText;
     }
 
     /**
      * 获取commit信息
+     *
      * @return 响应对象
      * @throws Exception
      */
     private SingleCommitResponseDTO getCommitResponse() throws Exception {
-        Map<String, String> headers = new HashMap<String, String>();
+        if (cachedCommitResponse == null) {
+            String result = DefaultHttpUtil.executeGetRequest(this.githubRepoUrl, getHeaders());
+            cachedCommitResponse = JSON.parseObject(result, SingleCommitResponseDTO.class);
+        }
+        return cachedCommitResponse;
+    }
+
+    private Map<String, String> getHeaders() {
+        Map<String, String> headers = new HashMap<>();
         headers.put("Accept", "application/vnd.github+json ");
         headers.put("Authorization", "Bearer " + githubToken);
         headers.put("X-GitHub-Api-Version", "2022-11-28");
-        String result = DefaultHttpUtil.executeGetRequest(this.githubRepoUrl, headers);
-        return JSON.parseObject(result, SingleCommitResponseDTO.class);
+        return headers;
     }
 }
