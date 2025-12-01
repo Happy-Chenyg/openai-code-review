@@ -109,29 +109,19 @@ public class GitRestAPIOperation implements BaseGitOperation{
         }
 
         // 否则回退到 Commit Comment 逻辑
-        SingleCommitResponseDTO responseDTO = getCommitResponse();
-        SingleCommitResponseDTO.CommitFile[] files = responseDTO.getFiles();
-        for (SingleCommitResponseDTO.CommitFile file : files) {
-            String patch = file.getPatch();
-            if (patch == null) continue; // 跳过无变更内容的文件
+        // 针对 Push 事件，发送 General Commit Comment（对整个提交的评论，不指定 path/position）
+        CommitCommentRequestDTO request = new CommitCommentRequestDTO();
+        request.setBody(result);
+        
+        // 构建评论 URL: /repos/{owner}/{repo}/commits/{sha}/comments
+        // 对于 Push 事件，githubRepoUrl 已经是 /commits/{sha} 结尾
+        String commentUrl = this.githubRepoUrl + "/comments";
+        
+        logger.info("写入 Push General Commit Comment: {}", commentUrl);
+        String response = writeCommentRequest(request, commentUrl);
+        logger.info("Push Comment response: {}", response);
 
-            // Commit Comment API需要的是变更字符串中的索引
-            int diffPositionIndex = DiffParseUtil.parseLastDiffPosition(patch);
-            CommitCommentRequestDTO request = new CommitCommentRequestDTO();
-            request.setBody(result);
-            request.setPath(file.getFilename());
-            request.setPosition(diffPositionIndex);
-            logger.info("写入注释请求参数：{}", JSON.toJSONString(request));
-
-            // 构建正确的评论 URL
-            String commentUrl = buildCommentUrl(file);
-            String response = writeCommentRequest(request, commentUrl);
-            logger.info("写入评审到注释区域处理完成，URL: {}, 注释结果：{}", commentUrl, response);
-            // 由于之前的评审是一次性评审多次，所以这里只处理一次，未来优化
-            break;
-        }
-
-        return responseDTO.getHtml_url();
+        return commentUrl;
     }
     
     private String getBaseRepoUrl() {

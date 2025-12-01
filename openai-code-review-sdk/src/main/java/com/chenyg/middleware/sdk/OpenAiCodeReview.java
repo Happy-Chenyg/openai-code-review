@@ -17,6 +17,9 @@ import org.slf4j.LoggerFactory;
 public class OpenAiCodeReview {
     private static final Logger logger = LoggerFactory.getLogger(OpenAiCodeReview.class);
 
+    // TODO: 以下配置变量当前未被使用，因为 main 方法是静态的且直接从环境变量获取。
+    // 未来如果重构为非静态调用或引入配置类时可以恢复使用。
+    /*
     // 配置配置
     private String weixin_appid = "wx9ff0cb86a77c5b7d";
     private String weixin_secret = "789e758666ba3a027b56546e29ec056d";
@@ -35,6 +38,7 @@ public class OpenAiCodeReview {
     private String github_project;
     private String github_branch;
     private String github_author;
+    */
 
     public static void main(String[] args) throws Exception {
         GitCommand gitCommand = new GitCommand(
