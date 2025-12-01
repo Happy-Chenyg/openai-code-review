@@ -4,7 +4,6 @@ import com.alibaba.fastjson2.JSON;
 import com.chenyg.middleware.sdk.infrastructure.git.dto.CommitCommentRequestDTO;
 import com.chenyg.middleware.sdk.infrastructure.git.dto.SingleCommitResponseDTO;
 import com.chenyg.middleware.sdk.types.utils.DefaultHttpUtil;
-import com.chenyg.middleware.sdk.types.utils.DiffParseUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,6 +17,11 @@ import java.util.Map;
  */
 public class GitRestAPIOperation implements BaseGitOperation{
 
+    // 定义 Token 限制相关的常量
+    private static final int MAX_DIFF_TOTAL_LENGTH = 80000; // 总 Diff 最大长度
+
+    private static final int MAX_FILE_DIFF_LENGTH = 20000;  // 单个文件 Diff 最大长度
+
     private final Logger logger = LoggerFactory.getLogger(GitRestAPIOperation.class);
 
     private final String githubRepoUrl;
@@ -28,10 +32,6 @@ public class GitRestAPIOperation implements BaseGitOperation{
 
     private SingleCommitResponseDTO cachedCommitResponse;
 
-    // 定义 Token 限制相关的常量
-    private static final int MAX_DIFF_TOTAL_LENGTH = 80000; // 总 Diff 最大长度
-    
-    private static final int MAX_FILE_DIFF_LENGTH = 20000;  // 单个文件 Diff 最大长度
 
     public GitRestAPIOperation(String githubRepoUrl, String githubToken, String pullNumber) {
         this.githubRepoUrl = githubRepoUrl;
