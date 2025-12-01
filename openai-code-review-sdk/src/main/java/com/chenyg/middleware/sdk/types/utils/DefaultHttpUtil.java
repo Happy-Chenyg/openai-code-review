@@ -28,20 +28,37 @@ public class DefaultHttpUtil {
         URL url = new URL(uri);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
+        
+        // 设置超时时间
+        connection.setConnectTimeout(30000); // 10 seconds
+        connection.setReadTimeout(360000);    // 60 seconds
+
         //设置请求头
         headers.forEach((key, value) -> connection.setRequestProperty(key, value));
 
         connection.setDoOutput(true);
-        BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
-        String inputLine;
-        StringBuilder content = new StringBuilder();
-        while ((inputLine = in.readLine()) != null) {
-            content.append(inputLine);
+        
+        int responseCode = connection.getResponseCode();
+        if (responseCode >= 200 && responseCode < 300) {
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
+                String inputLine;
+                StringBuilder content = new StringBuilder();
+                while ((inputLine = in.readLine()) != null) {
+                    content.append(inputLine);
+                }
+                return content.toString();
+            }
+        } else {
+            // 读取错误流
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(connection.getErrorStream(), StandardCharsets.UTF_8))) {
+                StringBuilder response = new StringBuilder();
+                String responseLine;
+                while ((responseLine = br.readLine()) != null) {
+                    response.append(responseLine.trim());
+                }
+                throw new RuntimeException("HTTP GET Request Failed with code " + responseCode + ": " + response.toString());
+            }
         }
-        in.close();
-        connection.disconnect();
-
-        return content.toString();
     }
 
     /**
@@ -57,6 +74,10 @@ public class DefaultHttpUtil {
         URL url = new URL(uri);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("POST");
+
+        // 设置超时时间
+        connection.setConnectTimeout(10000); // 10 seconds
+        connection.setReadTimeout(60000);    // 60 seconds
 
         // 设置默认请求头
         connection.setRequestProperty("Content-Type", "application/json; utf-8");

@@ -35,6 +35,11 @@ public class GitCommand implements BaseGitOperation{
         this.message = message;
     }
 
+    /**
+     * TODO: 此方法暂时废弃，目前使用 GitRestAPIOperation 通过 API 获取 Diff。
+     * 如果未来需要在本地环境（无网络或非 GitHub 环境）运行，可以恢复此方法。
+     */
+    /*
     public String diff() throws IOException, InterruptedException {
         // openai.itedus.cn 命令解释
         ProcessBuilder logProcessBuilder = new ProcessBuilder("git", "log", "-1", "--pretty=format:%H");//获取最近一次提交的哈希值
@@ -66,6 +71,13 @@ public class GitCommand implements BaseGitOperation{
 
         // 返回差异内容字符串
         return diffCode.toString();
+    }
+    */
+
+    @Override
+    public String diff() {
+        // 临时实现，避免编译报错
+        throw new UnsupportedOperationException("GitCommand.diff() is deprecated. Use GitRestAPIOperation.diff() instead.");
     }
 
     @Override
