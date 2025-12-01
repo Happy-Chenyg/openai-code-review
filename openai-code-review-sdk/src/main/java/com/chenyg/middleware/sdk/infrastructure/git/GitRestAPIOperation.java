@@ -23,9 +23,15 @@ public class GitRestAPIOperation implements BaseGitOperation{
     private final String githubRepoUrl;
 
     private final String githubToken;
+
     private final String pullNumber;
 
     private SingleCommitResponseDTO cachedCommitResponse;
+
+    // 定义 Token 限制相关的常量
+    private static final int MAX_DIFF_TOTAL_LENGTH = 80000; // 总 Diff 最大长度
+    
+    private static final int MAX_FILE_DIFF_LENGTH = 20000;  // 单个文件 Diff 最大长度
 
     public GitRestAPIOperation(String githubRepoUrl, String githubToken, String pullNumber) {
         this.githubRepoUrl = githubRepoUrl;
@@ -35,7 +41,6 @@ public class GitRestAPIOperation implements BaseGitOperation{
 
     @Override
     public String diff() throws Exception {
-        // ... (unchanged)
         // 如果缓存为空，则发起请求
         if (cachedCommitResponse == null) {
             logger.info("Start to get diff from github api: {}", githubRepoUrl);
@@ -50,12 +55,37 @@ public class GitRestAPIOperation implements BaseGitOperation{
             return "";
         }
         StringBuilder diffCode = new StringBuilder();
+        int currentTotalLength = 0;
+
         for (SingleCommitResponseDTO.CommitFile file : files) {
             logger.info("Processing file: {}", file.getFilename());
+            String patch = file.getPatch();
+
+            // 1. 跳过 Patch 为空的特殊文件（如二进制、大文件）
+            if (patch == null) {
+                logger.warn("Skipping file {} due to null patch (binary or too large).", file.getFilename());
+                continue;
+            }
+
+            // 2. 单个文件过长截断
+            if (patch.length() > MAX_FILE_DIFF_LENGTH) {
+                patch = patch.substring(0, MAX_FILE_DIFF_LENGTH) + "\n... (File truncated due to length limit)";
+            }
+
+            // 3. 总长度检查
+            if (currentTotalLength + patch.length() > MAX_DIFF_TOTAL_LENGTH) {
+                diffCode.append("待评审文件名称：").append(file.getFilename()).append("\n");
+                diffCode.append("该文件变更代码：... (Skipped due to total token limit)\n");
+                logger.warn("Total diff length limit reached. Stopping file processing.");
+                break;
+            }
+
             diffCode.append("待评审文件名称：").append(file.getFilename()).append("\n");
-            diffCode.append("该文件变更代码：").append(file.getPatch()).append("\n");
+            diffCode.append("该文件变更代码：").append(patch).append("\n");
+            
+            currentTotalLength += patch.length();
         }
-        logger.info("Diff process finished.");
+        logger.info("Diff process finished. Total length: {}", currentTotalLength);
         return diffCode.toString();
 
     }
@@ -83,6 +113,8 @@ public class GitRestAPIOperation implements BaseGitOperation{
         SingleCommitResponseDTO.CommitFile[] files = responseDTO.getFiles();
         for (SingleCommitResponseDTO.CommitFile file : files) {
             String patch = file.getPatch();
+            if (patch == null) continue; // 跳过无变更内容的文件
+
             // Commit Comment API需要的是变更字符串中的索引
             int diffPositionIndex = DiffParseUtil.parseLastDiffPosition(patch);
             CommitCommentRequestDTO request = new CommitCommentRequestDTO();
