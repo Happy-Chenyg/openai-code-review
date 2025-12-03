@@ -35,6 +35,10 @@ jobs:
           key: openai-code-review-sdk-2.0
           restore-keys: openai-code-review-sdk-
 
+      - name: Check Cache Status
+        run: |
+          echo "Cache status: ${{ steps.cache-jar.outputs.cache-hit }}"
+
       - name: Download openai-code-review-sdk JAR
         if: steps.cache-jar.outputs.cache-hit != 'true'
         run: |
