@@ -3,10 +3,10 @@ name: Build and Run OpenAiCodeReview By Main Remote Jar
 on:
   push:
     branches:
-      - master-close
+      - master
   pull_request:
     branches:
-      - master-close
+      - master
 
 jobs:
   build:
@@ -27,9 +27,25 @@ jobs:
       - name: Create libs directory
         run: mkdir -p ./libs
 
-      - name: Download openai-code-review-sdk JAR
-        run: wget -O ./libs/openai-code-review-sdk-1.0.jar https://github.com/Happy-Chenyg/openai-code-rewiew-log/releases/download/v1.0/openai-code-review-sdk-1.0.jar
+      - name: Cache JAR file
+        uses: actions/cache@v4.3.0
+        id: cache-jar
+        with:
+          path: ./libs/openai-code-review-sdk-2.0.jar
+          key: openai-code-review-sdk-2.0
+          restore-keys: openai-code-review-sdk-
 
+      - name: Check Cache Status
+        run: |
+          echo "Cache status: ${{ steps.cache-jar.outputs.cache-hit }}"
+
+      - name: Download openai-code-review-sdk JAR
+        if: steps.cache-jar.outputs.cache-hit != 'true'
+        run: |
+          echo "Cache miss, downloading JAR..."
+          wget -O ./libs/openai-code-review-sdk-2.0.jar https://github.com/Happy-Chenyg/openai-code-review/releases/download/2.0/openai-code-review-sdk-2.0.jar
+          echo "Download completed"
+          
       - name: Get repository name
         id: repo-name
         run: echo "REPO_NAME=${GITHUB_REPOSITORY##*/}" >> $GITHUB_ENV
@@ -54,7 +70,7 @@ jobs:
           echo "Commit message is ${{ env.COMMIT_MESSAGE }}"      
 
       - name: Run Code Review
-        run: java -jar ./libs/openai-code-review-sdk-1.0.jar
+        run: java -jar ./libs/openai-code-review-sdk-2.0.jar
         env:
           # Github 配置；GITHUB_REVIEW_LOG_URI「https://github.com/Happy-Chenyg/openai-code-rewiew-log」、GITHUB_TOKEN「https://github.com/settings/tokens」
           GITHUB_REVIEW_LOG_URI: ${{ secrets.CODE_REVIEW_LOG_URI }}

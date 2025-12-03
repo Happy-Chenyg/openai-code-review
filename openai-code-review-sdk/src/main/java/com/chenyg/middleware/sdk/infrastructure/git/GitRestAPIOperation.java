@@ -7,8 +7,11 @@ import com.chenyg.middleware.sdk.types.utils.DefaultHttpUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Chenyg
@@ -21,6 +24,25 @@ public class GitRestAPIOperation implements BaseGitOperation{
     private static final int MAX_DIFF_TOTAL_LENGTH = 80000; // 总 Diff 最大长度
 
     private static final int MAX_FILE_DIFF_LENGTH = 20000;  // 单个文件 Diff 最大长度
+
+    // 定义无需评审的文件模式（前端构建产物、锁文件等）
+    private static final Set<String> SKIP_FILE_PATTERNS = new HashSet<>(Arrays.asList(
+            "package-lock.json",
+            "yarn.lock",
+            "pnpm-lock.yaml",
+            "package.lock",
+            "dist/",
+            "build/",
+            "assets/",
+            "node_modules/",
+            ".min.js",
+            ".min.css",
+            "bundle.js",
+            "vendor.js",
+            "*.map",
+            ".DS_Store",
+            "Thumbs.db"
+    ));
 
     private final Logger logger = LoggerFactory.getLogger(GitRestAPIOperation.class);
 
@@ -59,20 +81,27 @@ public class GitRestAPIOperation implements BaseGitOperation{
 
         for (SingleCommitResponseDTO.CommitFile file : files) {
             logger.info("Processing file: {}", file.getFilename());
+            String filename = file.getFilename();
             String patch = file.getPatch();
 
-            // 1. 跳过 Patch 为空的特殊文件（如二进制、大文件）
-            if (patch == null) {
-                logger.warn("Skipping file {} due to null patch (binary or too large).", file.getFilename());
+            // 1. 跳过无需评审的文件（前端构建产物、锁文件等）
+            if (shouldSkipFile(filename)) {
+                logger.info("Skipping file {} (matched skip pattern).", filename);
                 continue;
             }
 
-            // 2. 单个文件过长截断
+            // 2. 跳过 Patch 为空的特殊文件（如二进制、大文件）
+            if (patch == null) {
+                logger.warn("Skipping file {} due to null patch (binary or too large).", filename);
+                continue;
+            }
+
+            // 3. 单个文件过长截断
             if (patch.length() > MAX_FILE_DIFF_LENGTH) {
                 patch = patch.substring(0, MAX_FILE_DIFF_LENGTH) + "\n... (File truncated due to length limit)";
             }
 
-            // 3. 总长度检查
+            // 4. 总长度检查
             if (currentTotalLength + patch.length() > MAX_DIFF_TOTAL_LENGTH) {
                 diffCode.append("待评审文件名称：").append(file.getFilename()).append("\n");
                 diffCode.append("该文件变更代码：... (Skipped due to total token limit)\n");
@@ -197,5 +226,40 @@ public class GitRestAPIOperation implements BaseGitOperation{
         headers.put("Authorization", "Bearer " + githubToken);
         headers.put("X-GitHub-Api-Version", "2022-11-28");
         return headers;
+    }
+
+    /**
+     * 判断文件是否应该跳过评审
+     * 
+     * @param filename 文件名
+     * @return true 表示跳过，false 表示需要评审
+     */
+    private boolean shouldSkipFile(String filename) {
+        if (filename == null || filename.isEmpty()) {
+            return true;
+        }
+        
+        // 检查是否匹配跳过模式
+        for (String pattern : SKIP_FILE_PATTERNS) {
+            // 支持通配符匹配
+            if (pattern.startsWith("*")) {
+                // 后缀匹配，如 *.map
+                if (filename.endsWith(pattern.substring(1))) {
+                    return true;
+                }
+            } else if (pattern.endsWith("/")) {
+                // 目录匹配，如 dist/
+                if (filename.startsWith(pattern) || filename.contains("/" + pattern)) {
+                    return true;
+                }
+            } else {
+                // 精确匹配或包含匹配
+                if (filename.equals(pattern) || filename.endsWith("/" + pattern) || filename.contains(pattern)) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
     }
 }
